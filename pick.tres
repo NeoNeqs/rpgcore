@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="Gizmo" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://component/ComponentBase.cs" id="1_1uc2w"]
+[ext_resource type="Script" path="res://component/ComponentState.cs" id="2_ojvll"]
+[ext_resource type="Script" path="res://ToolComponent.cs" id="2_ycnb5"]
+[ext_resource type="Script" path="res://Gizmo.cs" id="3_ycnb5"]
+[ext_resource type="Script" path="res://ToolState.cs" id="4_tcy24"]
+
+[sub_resource type="Resource" id="Resource_ycnb5"]
+script = ExtResource("2_ycnb5")
+MaxDurability = 132
+metadata/_custom_type_script = "uid://ecvs04t7g72a"
+
+[sub_resource type="Resource" id="Resource_tcy24"]
+script = ExtResource("4_tcy24")
+CurrentDurability = 127
+
+[resource]
+script = ExtResource("3_ycnb5")
+Components = Dictionary[String, ExtResource("1_1uc2w")]({
+"ToolComponent": SubResource("Resource_ycnb5")
+})
+States = Dictionary[String, ExtResource("2_ojvll")]({
+"ToolState": SubResource("Resource_tcy24")
+})
+metadata/_custom_type_script = "uid://bhuul2xsguyl1"
