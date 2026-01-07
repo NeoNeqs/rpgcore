@@ -11,7 +11,6 @@ public partial class Gizmo {
     public EditorGizmoTemplate GizmoTemplate {
         get;
         private set {
-            GD.Print(field, " ", value);
             if (field == value || !Engine.IsEditorHint())
                 return;
 

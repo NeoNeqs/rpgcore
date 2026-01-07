@@ -1,31 +1,51 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Godot;
 using Godot.Collections;
 
 namespace rpgcore.component;
 
 [Tool]
-public abstract partial class ComponentSystem<[MustBeVariant] TComponent, TSelf> : Resource
-    where TComponent : ComponentBase
-    where TSelf : ComponentSystem<TComponent, TSelf>, new() {
+public abstract partial class ComponentSystem<[MustBeVariant] TComponentBase, TSelf> : Resource
+    where TComponentBase : ComponentBase
+    where TSelf : ComponentSystem<TComponentBase, TSelf>, new() {
     protected internal Godot.Collections.Dictionary<string, ComponentBase?> Components { set; get; } = [];
 
-    private Godot.Collections.Dictionary<string, ComponentState?> States { set; get; } = [];
+    private Godot.Collections.Dictionary<string, ComponentState?> States {
+        set {
+            if (Engine.IsEditorHint()) {
+                States.Clear();
+                foreach ((var key, ComponentBase? component) in Components) {
+                    if (component is null) continue;
+                    field[key] = component.GetDefaultState();
+                    component.Changed += () => {
+                        if (Components.TryGetValue(key, out ComponentBase? value1)) {
+                            States[key] = value1?.GetDefaultState();
+                        }
+                    };
+                }
+            } else {
+                field = value;
+            }
+        }
+        get;
+    } = [];
 
     protected const string ComponentsExportName = "components";
 
-    public T? GetComponent<[MustBeVariant] T>() where T : TComponent {
-        if (Components.TryGetValue(typeof(T).Name, out ComponentBase? value)) {
-            return (T)value!;
+    public TComponent? GetComponent<[MustBeVariant] TComponent>() where TComponent : TComponentBase {
+        if (Components.TryGetValue(typeof(TComponent).Name, out ComponentBase? value)) {
+            return (TComponent)value!;
         }
 
         return null;
     }
 
-    public T? GetComponentState<[MustBeVariant] T>() where T : ComponentState {
-        if (States.TryGetValue(typeof(T).Name, out ComponentState? value)) {
-            return (T)value!;
+    public TState? GetComponentState<[MustBeVariant] TComponent, [MustBeVariant] TState>()
+        where TComponent : ComponentBase where TState : ComponentState {
+        if (States.TryGetValue(typeof(TComponent).Name, out ComponentState? value)) {
+            return (TState)value!;
         }
 
         return null;
@@ -48,6 +68,8 @@ public abstract partial class ComponentSystem<[MustBeVariant] TComponent, TSelf>
         return clone;
     }
 
+    
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     public new Resource Duplicate(bool deep = false) {
         throw new InvalidOperationException(
             $"{GetType().Name}.Duplicate() must not be used. " +
@@ -58,10 +80,10 @@ public abstract partial class ComponentSystem<[MustBeVariant] TComponent, TSelf>
     public override Array<Dictionary> _GetPropertyList() {
         return [
             // This is what the Inspector sees
-            ExportUtils.ExportResourceArrayEditor<TComponent>(ComponentsExportName),
+            ExportUtils.ExportResourceArrayEditor<TComponentBase>(ComponentsExportName),
             // This is what is stored in a file
             ExportUtils.ExportStorage(nameof(Components), Variant.Type.Dictionary),
-            ExportUtils.ExportProperty(nameof(States), Variant.Type.Dictionary)
+            ExportUtils.ExportStorage(nameof(States), Variant.Type.Dictionary)
         ];
     }
 
@@ -77,30 +99,21 @@ public abstract partial class ComponentSystem<[MustBeVariant] TComponent, TSelf>
         if (pProperty != ComponentsExportName) {
             return false;
         }
-        
-        GD.Print("TRIGGER!!!");
 
         Godot.Collections.Dictionary<string, ComponentBase?> newComponents = new();
         Godot.Collections.Dictionary<string, ComponentState?> newStates = new();
 
         var currentComponents = pValue.As<Array<Variant>>();
 
-        foreach (TComponent? component in currentComponents) {
+        foreach (TComponentBase? component in currentComponents) {
             var componentKey = component?.GetType().Name ?? "null";
             // Attempt to extract old value from _components, otherwise set the new one
             newComponents[componentKey] = Components.GetValueOrDefault(componentKey, component);
 
-            if (component is not null) {
-                ComponentState? defaultState = component?.GetDefaultState();
-                var stateKey = component?.GetDefaultState()?.GetType().Name ?? string.Empty;
-                // ComponentState? newState = States.GetValueOrDefault(stateKey, defaultState);
-                // if (newState is not null && stateKey.Length != 0) {
-                //     newStates[stateKey] = newState;
-                // }
+            ComponentState? defaultState = component?.GetDefaultState();
 
-                if (defaultState is not null && stateKey.Length != 0) {
-                    newStates[stateKey] = defaultState;
-                }
+            if (defaultState != null) {
+                newStates[componentKey] = defaultState;
             }
         }
 

@@ -2,7 +2,6 @@ using Godot;
 
 namespace rpgcore.component;
 
-[GlobalClass]
+[Tool, GlobalClass]
 public abstract partial class ComponentState : Resource {
-    
 }

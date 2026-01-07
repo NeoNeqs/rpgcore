@@ -8,7 +8,7 @@ public partial class Gizmo : ComponentSystem<ComponentBase, Gizmo> {
     [Export] public StringName Id { private set; get; } = new();
 
     public void OnUse() {
-        var toolState = GetComponentState<ToolState>();
+        ToolState? toolState = GetComponentState<ToolComponent, ToolState>();
         toolState?.CurrentDurability -= 1;
     }
 
