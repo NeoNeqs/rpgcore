@@ -1,98 +1,71 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using Godot;
 using Godot.Collections;
 
 namespace rpgcore.component;
 
-[Tool]
-public abstract partial class ComponentSystem<[MustBeVariant] TComponentBase, TSelf> : Resource
-    where TComponentBase : ComponentBase
-    where TSelf : ComponentSystem<TComponentBase, TSelf>, new() {
-    protected internal Godot.Collections.Dictionary<string, ComponentBase?> Components { set; get; } = [];
+[GlobalClass, Tool]
+public abstract partial class ComponentSystemBase : Resource {
+    private protected ComponentSystemBase() { }
 
-    private Godot.Collections.Dictionary<string, ComponentState?> States {
+    protected internal Godot.Collections.Dictionary<string, Component?> Components {
         set {
-            if (Engine.IsEditorHint()) {
-                States.Clear();
-                foreach ((var key, ComponentBase? component) in Components) {
-                    if (component is null) continue;
-                    field[key] = component.GetDefaultState();
-                    component.Changed += () => {
-                        if (Components.TryGetValue(key, out ComponentBase? value1)) {
-                            States[key] = value1?.GetDefaultState();
-                        }
-                    };
+            Action emitChangedAction = EmitChanged;
+            Callable emitChangedCallable = Callable.From(emitChangedAction);
+
+            foreach ((_, Component? component) in field) {
+                if (component is not null && component.IsConnected(Resource.SignalName.Changed, emitChangedCallable)) {
+                    component.Changed -= emitChangedAction;
                 }
-            } else {
-                field = value;
             }
+
+            foreach ((_, Component? component) in value) {
+                if (component is not null && !component.IsConnected(Resource.SignalName.Changed, emitChangedCallable)) {
+                    component.Changed += emitChangedAction;
+                }
+            }
+
+            field = value;
         }
         get;
     } = [];
+}
 
-    protected const string ComponentsExportName = "components";
+[Tool]
+public abstract partial class ComponentSystem<TComponentBase, TSelf> : ComponentSystemBase
+    where TComponentBase : Component
+    where TSelf : ComponentSystem<TComponentBase, TSelf>, new() {
+    public StringName Id { private set; get; } = new();
 
-    public TComponent? GetComponent<[MustBeVariant] TComponent>() where TComponent : TComponentBase {
-        if (Components.TryGetValue(typeof(TComponent).Name, out ComponentBase? value)) {
+    private protected ComponentSystem() { }
+
+    protected internal const string ComponentsExportName = "components";
+
+    public TComponent? GetComponent<TComponent>() where TComponent : TComponentBase {
+        if (Components.TryGetValue(typeof(TComponent).Name, out Component? value)) {
             return (TComponent)value!;
         }
 
         return null;
     }
 
-    public TState? GetComponentState<[MustBeVariant] TComponent, [MustBeVariant] TState>()
-        where TComponent : ComponentBase where TState : ComponentState {
-        if (States.TryGetValue(typeof(TComponent).Name, out ComponentState? value)) {
-            return (TState)value!;
-        }
-
-        return null;
-    }
-
-    public virtual TSelf Clone() {
-        var clone = new TSelf {
-            // Components are shared on purpose
-            Components = Components,
-        };
-
-        // Dictionary.duplicate will not work here, cause it will ignore GodotObjects :(
-        // Must do this *manually*
-        foreach ((var key, ComponentState? state) in States) {
-            if (state is not null) {
-                clone.States[key] = (ComponentState)state.Duplicate();
-            }
-        }
-
-        return clone;
-    }
-
-    
-    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
-    public new Resource Duplicate(bool deep = false) {
-        throw new InvalidOperationException(
-            $"{GetType().Name}.Duplicate() must not be used. " +
-            $"Use {GetType().Name}.Clone() instead, which correctly handles duplication."
-        );
+    public new TSelf Duplicate(bool deep = true) {
+        return (TSelf)base.Duplicate(true);
     }
 
     public override Array<Dictionary> _GetPropertyList() {
         return [
+            ExportUtils.ExportProperty(nameof(Id), Variant.Type.StringName),
             // This is what the Inspector sees
             ExportUtils.ExportResourceArrayEditor<TComponentBase>(ComponentsExportName),
             // This is what is stored in a file
-            ExportUtils.ExportStorage(nameof(Components), Variant.Type.Dictionary),
-            ExportUtils.ExportStorage(nameof(States), Variant.Type.Dictionary)
+            ExportUtils.ExportResourceDictionaryStorage<TComponentBase>(nameof(Components)),
         ];
     }
 
     public override Variant _Get(StringName pProperty) {
-        if (pProperty == ComponentsExportName) {
-            return Variant.From((Array<ComponentBase?>)Components.Values);
-        }
-
-        return default;
+        return pProperty == ComponentsExportName ? Variant.From((Array<Component?>)Components.Values) : default;
     }
 
     public override bool _Set(StringName pProperty, Variant pValue) {
@@ -100,25 +73,17 @@ public abstract partial class ComponentSystem<[MustBeVariant] TComponentBase, TS
             return false;
         }
 
-        Godot.Collections.Dictionary<string, ComponentBase?> newComponents = new();
-        Godot.Collections.Dictionary<string, ComponentState?> newStates = new();
+        Godot.Collections.Dictionary<string, Component?> newComponents = new();
 
-        var currentComponents = pValue.As<Array<Variant>>();
+        var incomingComponents = pValue.As<Array<Variant>>();
 
-        foreach (TComponentBase? component in currentComponents) {
+        foreach (TComponentBase? component in incomingComponents) {
             var componentKey = component?.GetType().Name ?? "null";
-            // Attempt to extract old value from _components, otherwise set the new one
+
             newComponents[componentKey] = Components.GetValueOrDefault(componentKey, component);
-
-            ComponentState? defaultState = component?.GetDefaultState();
-
-            if (defaultState != null) {
-                newStates[componentKey] = defaultState;
-            }
         }
 
         Components = newComponents;
-        States = newStates;
         return true;
     }
 }

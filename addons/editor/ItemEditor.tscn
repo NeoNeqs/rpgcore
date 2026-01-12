@@ -1,0 +1,59 @@
+[gd_scene load_steps=3 format=3 uid="uid://bintwyw0oojh1"]
+
+[ext_resource type="Script" uid="uid://c8ps6ctwr2axr" path="res://addons/editor/ItemEditor.cs" id="1_aj5xo"]
+[ext_resource type="PackedScene" uid="uid://caif5e8sdd335" path="res://addons/editor/PropertiesTab.tscn" id="2_7dqlx"]
+
+[node name="ItemEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_aj5xo")
+
+[node name="Container" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="HBoxContainer" parent="Container"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="CurrentFile" type="Label" parent="Container/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 6
+text = "res://resources/pick.tres"
+
+[node name="Content" type="HSplitContainer" parent="Container"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/Content"]
+layout_mode = 2
+
+[node name="FilterBox" type="LineEdit" parent="Container/Content/VBoxContainer"]
+layout_mode = 2
+
+[node name="Tree" type="Tree" parent="Container/Content/VBoxContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_vertical = 3
+hide_root = true
+
+[node name="TabContainer" type="TabContainer" parent="Container/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+
+[node name="PropertiesTab" parent="Container/Content/TabContainer" instance=ExtResource("2_7dqlx")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2

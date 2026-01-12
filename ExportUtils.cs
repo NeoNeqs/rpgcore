@@ -47,6 +47,12 @@ public static class ExportUtils {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Dictionary ExportResourceDictionaryStorage<TResource>(string pName) where TResource : Resource {
+        return Export(pName, Type.Dictionary, Hint.None, string.Empty,
+            Usage.Storage | Usage.AlwaysDuplicate);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Dictionary ExportEnumEditor<TEnum>(string pName) where TEnum : struct, Enum {
         return ExportEditor(pName, Type.Int, Hint.Enum, Utils.EnumToHintString<TEnum>());
     }

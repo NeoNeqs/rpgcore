@@ -8,13 +8,25 @@
 
 config_version=5
 
+[RPGEditor]
+
+paths/gizmos_directory="res://resources/"
+
 [application]
 
 config/name="rpgcore"
 run/main_scene="uid://b1hmbobp7wer8"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
+
+[dotnet]
+
+project/assembly_name="rpgcore"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/script-ide/plugin.cfg")
+enabled=PackedStringArray("res://addons/editor/plugin.cfg", "res://addons/gdUnit4/plugin.cfg", "res://addons/kenyoni/plugin_reloader/plugin.cfg", "res://addons/script-ide/plugin.cfg")
+
+[gdunit4]
+
+settings/common/update_notification_enabled=false
