@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="Gizmo" load_steps=7 format=3 uid="uid://dhlujkaonb31b"]
+
+[ext_resource type="Script" uid="uid://bgrehjmg8b3pg" path="res://gizmo/GizmoComponent.cs" id="1_24v0j"]
+[ext_resource type="Script" uid="uid://bqmnrsdr8woqg" path="res://gizmo/ReadonlyAttributes.cs" id="2_0w2m7"]
+[ext_resource type="Script" uid="uid://bhuul2xsguyl1" path="res://gizmo/Gizmo.cs" id="2_wul7o"]
+[ext_resource type="Script" uid="uid://cy2cn33f2ftco" path="res://gizmo/components/WeaponComponent.cs" id="4_yssef"]
+
+[sub_resource type="Resource" id="Resource_0w2m7"]
+script = ExtResource("2_0w2m7")
+_Data = Dictionary[String, float]({})
+
+[sub_resource type="Resource" id="Resource_j2hdk"]
+script = ExtResource("4_yssef")
+Attributes = SubResource("Resource_0w2m7")
+RandomStatPools = []
+metadata/_custom_type_script = "uid://cy2cn33f2ftco"
+
+[resource]
+script = ExtResource("2_wul7o")
+Components = Dictionary[String, ExtResource("1_24v0j")]({
+"rpgcore.gizmo.components.WeaponComponent": SubResource("Resource_j2hdk")
+})
+metadata/_custom_type_script = "uid://bhuul2xsguyl1"

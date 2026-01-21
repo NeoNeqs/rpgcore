@@ -53,8 +53,9 @@ public static class ExportUtils {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Dictionary ExportEnumEditor<TEnum>(string pName) where TEnum : struct, Enum {
-        return ExportEditor(pName, Type.Int, Hint.Enum, Utils.EnumToHintString<TEnum>());
+    public static Dictionary ExportEnumEditor<TEnum>(string pName, Usage usage = Usage.None)
+        where TEnum : struct, Enum {
+        return Export(pName, Type.Int, Hint.Enum, Utils.EnumToHintString<TEnum>(), Usage.Editor | usage);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -68,8 +69,8 @@ public static class ExportUtils {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Dictionary ExportReadonlyProperty(string pName, Type pType) {
-        return Export(pName, pType, Hint.None, string.Empty, Usage.ScriptVariable | Usage.Default | Usage.ReadOnly);
+    public static Dictionary ExportReadonlyProperty(string pName, Type pType, string pHintString = "") {
+        return Export(pName, pType, Hint.None, pHintString, Usage.ScriptVariable | Usage.Default | Usage.ReadOnly);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,9 +1,13 @@
 using Godot;
-using rpgcore.component;
 
 namespace rpgcore.gizmo.components;
 
-[SharedData(typeof(ArmorSharedData))]
 [GlobalClass, Tool]
 public partial class ArmorComponent : EquipmentComponent {
+    [Export, Notify] public ArmorType ArmorType { private set; get; } = ArmorType.Light;
+    [Export, Notify] public ArmorSlot Slot { private set; get; }
+
+    protected override float GetAdditionalPrice() {
+        return Pricing.GetArmorPrice(ArmorType, Slot);
+    }
 }

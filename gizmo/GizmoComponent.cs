@@ -1,5 +1,4 @@
 using Godot;
-using rpgcore.component;
 
 namespace rpgcore.gizmo;
 
