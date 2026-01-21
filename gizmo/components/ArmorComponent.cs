@@ -10,4 +10,8 @@ public partial class ArmorComponent : EquipmentComponent {
     protected override float GetAdditionalPrice() {
         return Pricing.GetArmorPrice(ArmorType, Slot);
     }
+
+    protected override float GetPenalty() {
+        return 1.0f;
+    }
 }

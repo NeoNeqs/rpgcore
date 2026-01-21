@@ -9,7 +9,7 @@ namespace rpgcore.gizmo.components;
 
 [GlobalClass, Tool]
 public abstract partial class EquipmentComponent : GizmoComponent {
-    [Export]
+    [Export(PropertyHint.Range, "0,1000,1")]
     public ulong ItemLevel {
         private set {
             field = value;
@@ -42,7 +42,7 @@ public abstract partial class EquipmentComponent : GizmoComponent {
         get;
     } = null!;
 
-    [Export] public Attributes?[] RandomStatPools { get; set; } = null!;
+    [Export] public Attributes?[]? RandomStatPools { get; set; } = null!;
 
     [Export, Notify]
     public ulong MaxDurability {
@@ -71,17 +71,13 @@ public abstract partial class EquipmentComponent : GizmoComponent {
     }
 
     protected abstract float GetAdditionalPrice();
-
+    protected abstract float GetPenalty();
 
     private void RecalculateStats(Attribute attribute, float oldValue, float newValue) {
         RecalculateStats();
     }
 
-    protected void RecalculateStats([CallerMemberName] string? pCaller = null) {
-        if (pCaller != nameof(Weights)) {
-            return;
-        }
-
+    protected void RecalculateStats() {
         foreach (Attribute stat in Enum.GetValues<Attribute>()) {
             Attributes?.Set2(stat, Mathf.Inf);
         }
@@ -90,16 +86,14 @@ public abstract partial class EquipmentComponent : GizmoComponent {
 
         // --- Pass 1: Guaranteed Stats ---
         float guaranteedTotalWeight = Weights?.Sum() ?? 1.0f;
-        GD.Print(Weights);
         if (guaranteedTotalWeight > 0 && Weights is not null) {
             foreach ((string statStr, float weight) in Weights.Iter()) {
-                GD.Print(4);
                 if (weight <= 0) continue;
                 var stat = Enum.Parse<Attribute>(statStr);
 
                 float share = weight / guaranteedTotalWeight;
                 float price = Pricing.GetBasePrice(stat) + GetAdditionalPrice();
-                float finalValue = Mathf.Ceil((mainBudget * share) / price);
+                float finalValue = Mathf.Floor(((mainBudget * share) / price) * GetPenalty());
 
                 if (finalValue > 0) {
                     Attributes?.Set2(stat, finalValue);
@@ -109,8 +103,7 @@ public abstract partial class EquipmentComponent : GizmoComponent {
 
         float secondaryBudget = mainBudget * 0.1f;
         // --- Pass 2: Random Stats (One roll per pool) ---
-        if (Engine.IsEditorHint() || RandomStatPools.Length <= 0) return;
-        GD.Print(2);
+        if (Engine.IsEditorHint() || RandomStatPools is null || RandomStatPools.Length <= 0) return;
         foreach (Attributes? pool in RandomStatPools) {
             if (pool == null) continue;
 
@@ -138,7 +131,7 @@ public abstract partial class EquipmentComponent : GizmoComponent {
             // We use the weight relative to the pool's total to determine the budget share
             float share = weightForBudget / poolTotalWeight;
             float price = Pricing.GetBasePrice(stat) + GetAdditionalPrice();
-            float finalValue = Mathf.Floor((secondaryBudget * share) / price);
+            float finalValue = Mathf.Floor(((secondaryBudget * share) / price) * GetPenalty());
 
             if (finalValue > 0) {
                 Attributes?.Increase(stat, finalValue);

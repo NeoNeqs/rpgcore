@@ -9,6 +9,7 @@ public partial class Main : Node {
     public override void _Ready() {
         // var a = new PropertyEffect();
         var g = GD.Load<Gizmo>("res://resources/1hand.tres");
+        GD.Print(g.GetComponent<WeaponComponent>().Attributes.Get2(Attribute.Dexterity));
         var weapon = g.GetComponent<WeaponComponent>();
         
         // This applies the random rolls defined by the pool and count

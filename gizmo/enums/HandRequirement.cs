@@ -1,6 +1,6 @@
 namespace rpgcore.gizmo.enums;
 
 public enum HandRequirement {
-    OneHanded,
-    TwoHanded
+    OneHanded = 1,
+    TwoHanded = 2,
 }

@@ -29,6 +29,10 @@ public partial class WeaponComponent : EquipmentComponent {
 
 
     protected override float GetAdditionalPrice() {
-        return Pricing.GetWeaponPrice(WeaponClass) * (int)Hand * 0.5f;
+        return Pricing.GetWeaponPrice(WeaponClass);
+    }
+
+    protected override float GetPenalty() {
+        return (int)Hand * 0.5f;
     }
 }
