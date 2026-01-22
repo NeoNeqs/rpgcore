@@ -24,7 +24,7 @@ public partial class Composable<[MustBeVariant] TComponentBase> : Resource where
                     component.Changed += emitChangedAction;
                 }
             }
-
+            GD.Print(value);
             field = value;
         }
         get;

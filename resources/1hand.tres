@@ -17,8 +17,7 @@ metadata/_custom_type_script = "uid://bqmnrsdr8woqg"
 [sub_resource type="Resource" id="Resource_864bn"]
 script = ExtResource("3_df5xg")
 _Data = Dictionary[String, float]({
-"Intelligence": 1.0,
-"Vigor": 2.0
+"Intelligence": 1.29
 })
 metadata/_custom_type_script = "uid://bmim4prke4tp0"
 

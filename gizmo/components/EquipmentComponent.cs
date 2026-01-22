@@ -2,51 +2,81 @@ using System;
 using Godot;
 using Godot.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Attribute = rpgcore.gizmo.enums.Attribute;
 
 namespace rpgcore.gizmo.components;
 
 [GlobalClass, Tool]
-public abstract partial class EquipmentComponent : GizmoComponent {
+public abstract partial class EquipmentComponent : GizmoComponent
+{
     [Export(PropertyHint.Range, "0,1000,1")]
-    public ulong ItemLevel {
-        private set {
+    public ulong ItemLevel
+    {
+        private set
+        {
             field = value;
-            if (Engine.IsEditorHint()) {
+#if TOOLS
+            if (Engine.IsEditorHint())
+            {
                 RecalculateStats();
             }
+#endif
         }
         get;
     }
 
     [Export]
-    public Attributes? Weights {
-        private set {
-            if (Engine.IsEditorHint()) {
-                if (field is not null) {
+    public Attributes? Weights
+    {
+        private set
+        {
+#if TOOLS
+            if (Engine.IsEditorHint())
+            {
+                if (field is not null)
+                {
                     field.AttributeChanged -= RecalculateStats;
                 }
 
                 field = value;
 
-                if (field is not null) {
+                if (field is not null)
+                {
                     field.AttributeChanged += RecalculateStats;
                 }
 
                 RecalculateStats();
-            } else {
-                field = value;
+                return;
             }
+#endif
+
+            field = value;
+            CalculateRandomStats(ItemLevel);
         }
         get;
     } = null!;
 
-    [Export] public Attributes?[]? RandomStatPools { get; set; } = null!;
+    [Export]
+    public Attributes?[]? RandomStatPools
+    {
+        get; set
+        {
+            field = value;
+#if TOOLS
+            if (Engine.IsEditorHint())
+            {
+                return;
+            }
+#endif
+            CalculateRandomStats(ItemLevel);
+        }
+    } = null!;
 
     [Export, Notify]
-    public ulong MaxDurability {
-        private set {
+    public ulong MaxDurability
+    {
+        private set
+        {
             if (Durability > value) Durability = value;
             field = value;
         }
@@ -54,31 +84,44 @@ public abstract partial class EquipmentComponent : GizmoComponent {
     }
 
     [Export, Notify]
-    public ulong Durability {
-        private set {
+    public ulong Durability
+    {
+        private set
+        {
             if (value > MaxDurability) value = MaxDurability;
             _durability.Set(value);
         }
         get => _durability.Get();
     }
 
-    public ReadonlyAttributes? Attributes {
+    public ReadonlyAttributes? Attributes
+    {
         get;
-        private set {
+        private set
+        {
             field = value;
-            RecalculateStats();
+#if TOOLS
+            if (Engine.IsEditorHint())
+            {
+                RecalculateStats();
+            }
+#endif
         }
     }
 
     protected abstract float GetAdditionalPrice();
     protected abstract float GetPenalty();
 
-    private void RecalculateStats(Attribute attribute, float oldValue, float newValue) {
+#if TOOLS
+    private void RecalculateStats(Attribute attribute, float oldValue, float newValue)
+    {
         RecalculateStats();
     }
 
-    protected void RecalculateStats() {
-        foreach (Attribute stat in Enum.GetValues<Attribute>()) {
+    protected void RecalculateStats()
+    {
+        foreach (Attribute stat in Enum.GetValues<Attribute>())
+        {
             Attributes?.Set2(stat, Mathf.Inf);
         }
 
@@ -86,8 +129,10 @@ public abstract partial class EquipmentComponent : GizmoComponent {
 
         // --- Pass 1: Guaranteed Stats ---
         float guaranteedTotalWeight = Weights?.Sum() ?? 1.0f;
-        if (guaranteedTotalWeight > 0 && Weights is not null) {
-            foreach ((string statStr, float weight) in Weights.Iter()) {
+        if (guaranteedTotalWeight > 0 && Weights is not null)
+        {
+            foreach ((string statStr, float weight) in Weights.Iter())
+            {
                 if (weight <= 0) continue;
                 var stat = Enum.Parse<Attribute>(statStr);
 
@@ -95,16 +140,23 @@ public abstract partial class EquipmentComponent : GizmoComponent {
                 float price = Pricing.GetBasePrice(stat) + GetAdditionalPrice();
                 float finalValue = Mathf.Floor(((mainBudget * share) / price) * GetPenalty());
 
-                if (finalValue > 0) {
+                if (finalValue > 0)
+                {
                     Attributes?.Set2(stat, finalValue);
                 }
             }
         }
 
+        CalculateRandomStats(mainBudget);
+    }
+
+    private void CalculateRandomStats(float mainBudget)
+    {
         float secondaryBudget = mainBudget * 0.1f;
         // --- Pass 2: Random Stats (One roll per pool) ---
         if (Engine.IsEditorHint() || RandomStatPools is null || RandomStatPools.Length <= 0) return;
-        foreach (Attributes? pool in RandomStatPools) {
+        foreach (Attributes? pool in RandomStatPools)
+        {
             if (pool == null) continue;
 
             IReadOnlyDictionary<string, float> poolIter = pool.Iter();
@@ -113,7 +165,8 @@ public abstract partial class EquipmentComponent : GizmoComponent {
             // 1. Get all stats with a positive weight to treat them as equal candidates
             var candidates = new List<string>();
             float poolTotalWeight = 0;
-            foreach ((string name, float weight) in poolIter) {
+            foreach ((string name, float weight) in poolIter)
+            {
                 if (!(weight > 0)) continue;
                 candidates.Add(name);
                 poolTotalWeight += weight;
@@ -133,13 +186,16 @@ public abstract partial class EquipmentComponent : GizmoComponent {
             float price = Pricing.GetBasePrice(stat) + GetAdditionalPrice();
             float finalValue = Mathf.Floor(((secondaryBudget * share) / price) * GetPenalty());
 
-            if (finalValue > 0) {
+            if (finalValue > 0)
+            {
                 Attributes?.Increase(stat, finalValue);
             }
         }
-    }
 
-    public override Array<Dictionary> _GetPropertyList() {
+    }
+#endif
+    public override Array<Dictionary> _GetPropertyList()
+    {
         return [
             ExportUtils.Export(nameof(Attributes), Variant.Type.Object, PropertyHint.ResourceType,
                 nameof(ReadonlyAttributes), PropertyUsageFlags.Default)
